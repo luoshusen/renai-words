@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/styles.css">
+  <title>仁爱单词通</title>
+</head>
+<body>
+  <div id="app">
+    <!-- 登录/注册 -->
+    <section id="login-view">
+      <h2>仁爱单词通</h2>
+      <input id="login-email" type="email" placeholder="邮箱" />
+      <input id="login-password" type="password" placeholder="密码（至少6位）" />
+      <select id="login-role">
+        <option value="student">学生</option>
+        <option value="teacher">教师</option>
+      </select>
+      <button id="btn-signup">注册</button>
+      <button id="btn-login">登录</button>
+    </section>
+
+    <!-- 学生首页 -->
+    <section id="student-home" style="display:none">
+      <h2>选择单元</h2>
+      <div id="unit-list"></div>
+      <button id="btn-logout-student">退出登录</button>
+    </section>
+
+    <!-- 教师首页 -->
+    <section id="teacher-home" style="display:none">
+      <h2>我的班级</h2>
+      <div id="class-list"></div>
+      <button id="btn-create-class">创建班级</button>
+      <button id="btn-logout-teacher">退出登录</button>
+    </section>
+
+    <!-- 单词学习页 -->
+    <section id="word-study" style="display:none">
+      <h2 id="study-title">单词学习</h2>
+      <div id="word-cards"></div>
+      <button id="btn-back-study">返回</button>
+    </section>
+
+    <!-- 教师点评页 -->
+    <section id="teacher-comment" style="display:none">
+      <h2>学生详情</h2>
+      <div id="student-detail"></div>
+      <textarea id="comment-text" placeholder="输入文字点评..."></textarea>
+      <button id="btn-record">🎤 开始录音</button>
+      <button id="btn-send-comment">发送点评</button>
+      <button id="btn-back-comment">返回</button>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+  </script>
+</body>
+</html>
