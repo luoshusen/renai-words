@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>仁爱单词通</title>
+  <style>
+    body { font-family: Arial; padding: 2rem; }
+    button, input, select { display: block; margin: 0.5rem 0; padding: 0.6rem; width: 100%; }
+  </style>
+</head>
+<body>
+  <h2>仁爱单词通</h2>
+  <input id="email" type="email" placeholder="邮箱" />
+  <input id="password" type="password" placeholder="密码(至少6位)" />
+  <select id="role"><option value="student">学生</option><option value="teacher">教师</option></select>
+  <button id="btn-signup">注册</button>
+  <button id="btn-login">登录</button>
+  <div id="app" style="display:none">
+    <button id="btn-logout">退出</button>
+    <div id="units"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://gzzkiynxaggepyqrjtdp.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_I1y3k3O2cnH74CTVKIR-Dg_g-U047Nz';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    document.getElementById('btn-signup').onclick = async () => {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const role = document.getElementById('role').value;
+      if (!email || !password) return alert('请填写完整');
+      if (password.length < 6) return alert('密码至少6位');
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) return alert('注册失败: ' + error.message);
+      if (!data.user) return alert('请先在Supabase关闭邮箱确认');
+      await supabase.from('profiles').insert([{ id: data.user.id, email, role }]);
+      alert('注册成功！现在请点击登录。');
+    };
+
+    document.getElementById('btn-login').onclick = async () => {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      if (!email || !password) return alert('请填写完整');
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) return alert('登录失败: ' + error.message);
+      document.querySelectorAll('input,select').forEach(e => e.style.display = 'none');
+      document.getElementById('btn-signup').style.display = 'none';
+      document.getElementById('btn-login').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      const { data: words } = await supabase.from('words').select('unit');
+      const units = [...new Set(words.map(w => w.unit))];
+      const unitsDiv = document.getElementById('units');
+      units.forEach(u => {
+        const btn = document.createElement('button');
+        btn.textContent = u;
+        btn.onclick = () => alert('你选择了 ' + u);
+        unitsDiv.appendChild(btn);
+      });
+    };
+
+    document.getElementById('btn-logout').onclick = () => {
+      supabase.auth.signOut();
+      location.reload();
+    };
+  </script>
+</body>
+</html>
