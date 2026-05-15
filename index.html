@@ -10,7 +10,6 @@
 </head>
 <body>
   <div id="app">
-    <!-- 登录/注册 -->
     <section id="login-view">
       <h2>仁爱单词通</h2>
       <input id="login-email" type="email" placeholder="邮箱" />
@@ -22,30 +21,22 @@
       <button id="btn-signup">注册</button>
       <button id="btn-login">登录</button>
     </section>
-
-    <!-- 学生首页 -->
     <section id="student-home" style="display:none">
       <h2>选择单元</h2>
       <div id="unit-list"></div>
       <button id="btn-logout-student">退出登录</button>
     </section>
-
-    <!-- 教师首页 -->
     <section id="teacher-home" style="display:none">
       <h2>我的班级</h2>
       <div id="class-list"></div>
       <button id="btn-create-class">创建班级</button>
       <button id="btn-logout-teacher">退出登录</button>
     </section>
-
-    <!-- 单词学习页 -->
     <section id="word-study" style="display:none">
       <h2 id="study-title">单词学习</h2>
       <div id="word-cards"></div>
       <button id="btn-back-study">返回</button>
     </section>
-
-    <!-- 教师点评页 -->
     <section id="teacher-comment" style="display:none">
       <h2>学生详情</h2>
       <div id="student-detail"></div>
@@ -57,51 +48,39 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
-  <!-- 所有逻辑直接写在这里，不再加载 app.js -->
   <script>
-    // =============================================
-    // 请将下面两行替换成你自己的 Supabase 信息
-    // =============================================
-    const SUPABASE_URL = 'https://gzzkiynxaggepyqrjtdp.supabase.co'; // 你的 Project URL
-    const SUPABASE_KEY = 'sb_publishable_I1y3k3O2cnH74CTVKIR-Dg_g-U047Nz'; // 你的 Publishable Key
+    // ========== 你的 Supabase 配置（请勿修改） ==========
+    const SUPABASE_URL = 'https://gzzkiynxaggepyqrjtdp.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_I1y3k3O2cnH74CTVKIR-Dg_g-U047Nz';
     // =============================================
 
-    // 只声明一次 supabase，后续所有代码复用这个变量
+    // 唯一的 supabase 实例
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentUser = null;
     let currentProfile = null;
 
-    // 视图切换
     function showView(viewId) {
       document.querySelectorAll('section').forEach(s => s.style.display = 'none');
       document.getElementById(viewId).style.display = 'block';
     }
 
-    // 初始化
     async function init() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           currentUser = user;
-          const { data: profile, error: profileError } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-          if (profileError) {
-            alert('获取用户资料失败：' + profileError.message);
-            return;
-          }
+          const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+          if (error) { alert('获取用户资料失败：' + error.message); return; }
           currentProfile = profile;
           if (profile.role === 'student') loadStudentHome();
           else loadTeacherHome();
         } else {
           showView('login-view');
         }
-      } catch (e) {
-        alert('初始化错误：' + e.message);
-      }
+      } catch (e) { alert('初始化错误：' + e.message); }
     }
 
-    // 注册
     document.getElementById('btn-signup').addEventListener('click', async () => {
       try {
         const email = document.getElementById('login-email').value.trim();
@@ -112,17 +91,16 @@
 
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) { alert('注册失败：' + error.message); return; }
-        if (!data.user) { alert('注册未返回用户信息，可能邮箱确认已开启。请在 Supabase 中暂时关闭邮箱确认。'); return; }
+        if (!data.user) { alert('注册未返回用户信息，请先在 Supabase 中暂时关闭邮箱确认。'); return; }
 
         const { error: insertError } = await supabase.from('profiles').insert([
-          { id: data.user.id, email: email, role: role }
+          { id: data.user.id, email, role }
         ]);
         if (insertError) { alert('用户资料保存失败：' + insertError.message); return; }
         alert('注册成功！请点击“登录”按钮登录。');
       } catch (e) { alert('注册异常：' + e.message); }
     });
 
-    // 登录
     document.getElementById('btn-login').addEventListener('click', async () => {
       try {
         const email = document.getElementById('login-email').value.trim();
@@ -133,14 +111,13 @@
         if (error) { alert('登录失败：' + error.message); return; }
         currentUser = data.user;
         const { data: profile, error: profileError } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
-        if (profileError) { alert('获取用户资料失败：' + profileError.message + '（可能未完成注册或数据库RLS未配置）'); return; }
+        if (profileError) { alert('获取用户资料失败：' + profileError.message); return; }
         currentProfile = profile;
         if (profile.role === 'student') loadStudentHome();
         else loadTeacherHome();
       } catch (e) { alert('登录异常：' + e.message); }
     });
 
-    // 学生加载单元
     async function loadStudentHome() {
       showView('student-home');
       try {
@@ -158,7 +135,6 @@
       } catch (e) { alert('加载单元异常：' + e.message); }
     }
 
-    // 加载单词
     async function loadWordStudy(unit) {
       showView('word-study');
       document.getElementById('study-title').textContent = unit;
@@ -170,16 +146,12 @@
         words.forEach(w => {
           const div = document.createElement('div');
           div.className = 'word-card';
-          div.innerHTML = `
-            <strong>${w.word}</strong> <span class="phonetic">${w.phonetic || ''}</span>
-            <div class="meaning">${w.meaning}</div>
-          `;
+          div.innerHTML = `<strong>${w.word}</strong> <span class="phonetic">${w.phonetic || ''}</span><div class="meaning">${w.meaning}</div>`;
           container.appendChild(div);
         });
       } catch (e) { alert('加载单词异常：' + e.message); }
     }
 
-    // 教师加载班级
     async function loadTeacherHome() {
       showView('teacher-home');
       try {
@@ -198,11 +170,10 @@
       } catch (e) { alert('加载班级异常：' + e.message); }
     }
 
-    // 加载班级学生
     async function loadClassStudents(classId) {
       try {
         const { data: members, error } = await supabase.from('class_members').select('student_id').eq('class_id', classId);
-        if (error) { alert('获取班级成员失败：' + error.message); return; }
+        if (error) { alert('获取成员失败：' + error.message); return; }
         if (!members) return;
         const studentList = document.getElementById('student-detail');
         studentList.innerHTML = '<h3>学生列表</h3>';
@@ -217,9 +188,9 @@
       } catch (e) { alert('加载学生异常：' + e.message); }
     }
 
-    // 点评相关
     let currentCommentStudentId = null;
     let voiceBlob = null;
+
     function loadStudentComments(studentId, classId) {
       currentCommentStudentId = studentId;
       document.getElementById('comment-text').value = '';
@@ -270,7 +241,6 @@
       } catch (e) { alert('发送点评异常：' + e.message); }
     });
 
-    // 录音
     let mediaRecorder;
     document.getElementById('btn-record').addEventListener('click', async () => {
       try {
@@ -289,7 +259,6 @@
       } catch (e) { alert('无法录音：' + e.message); }
     });
 
-    // 其他按钮
     document.getElementById('btn-back-study').onclick = () => loadStudentHome();
     document.getElementById('btn-back-comment').onclick = () => loadTeacherHome();
     document.getElementById('btn-logout-student').onclick = () => { supabase.auth.signOut(); showView('login-view'); };
@@ -303,10 +272,9 @@
       else loadTeacherHome();
     });
 
-    // 启动
     init();
   </script>
-  
+
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js');
